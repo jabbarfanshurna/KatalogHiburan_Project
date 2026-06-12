@@ -71,6 +71,15 @@ public class DetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
+        // --- TAMBAHAN PERLINDUNGAN UNTUK ANDROID 13 & 14+ ---
+        // Meminta izin untuk menampilkan notifikasi dari OS
+        if (Build.VERSION.SDK_INT >= 33) { // 33 adalah Android 13 (Tiramisu)
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
+        // ---------------------------------------------------
+
         database = AppDatabase.getInstance(this);
         executorService = Executors.newSingleThreadExecutor();
 

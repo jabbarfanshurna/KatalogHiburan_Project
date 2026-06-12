@@ -10,6 +10,8 @@ import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
 
+// PASTIKAN BARIS INI ADA UNTUK MEMANGGIL IKON APLIKASIMU
+import com.example.kataloghiburan.R;
 import com.example.kataloghiburan.ui.MainActivity;
 
 public class AlarmReceiver extends BroadcastReceiver {
@@ -23,7 +25,6 @@ public class AlarmReceiver extends BroadcastReceiver {
 
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-        // Membuat Notification Channel untuk Android Oreo (8.0) ke atas
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
@@ -36,7 +37,6 @@ public class AlarmReceiver extends BroadcastReceiver {
             }
         }
 
-        // Aksi ketika notifikasi diklik (membuka MainActivity)
         Intent contentIntent = new Intent(context, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(
                 context,
@@ -45,18 +45,16 @@ public class AlarmReceiver extends BroadcastReceiver {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        // Merakit UI Notifikasi
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_lock_idle_alarm) // Ikon jam bawaan OS
+                .setSmallIcon(R.drawable.outline_add_alert_24) // <--- PERBAIKAN: Gunakan ikon aplikasimu sendiri
                 .setContentTitle("Waktunya Nonton Film! 🎬")
                 .setContentText("Yuk buka aplikasi, jadwal nonton film '" + movieTitle + "' sudah tiba.")
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
-                .setVibrate(new long[]{1000, 1000, 1000, 1000}); // Efek getar HP
+                .setVibrate(new long[]{1000, 1000, 1000, 1000});
 
         if (notificationManager != null) {
-            // Memunculkan notifikasi
             notificationManager.notify(movieId, builder.build());
         }
     }
