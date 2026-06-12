@@ -30,4 +30,8 @@ public interface FavoriteMovieDao {
     // Tambahan Fase 3: Perintah untuk mengupdate rating dan ulasan ke film tertentu
     @Query("UPDATE favorite_movies SET user_rating = :rating, user_review = :review WHERE id = :id")
     void updateRatingAndReview(int id, float rating, String review);
+
+    // Tambahkan perintah ini di dalam interface FavoriteMovieDao
+    @Query("SELECT * FROM favorite_movies WHERE watch_date IS NOT NULL")
+    List<FavoriteMovie> getScheduledMovies();
 }

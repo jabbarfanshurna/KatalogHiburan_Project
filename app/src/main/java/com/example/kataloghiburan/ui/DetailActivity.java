@@ -1,6 +1,12 @@
 package com.example.kataloghiburan.ui;
 
+import android.app.AlarmManager;
+import android.app.DatePickerDialog;
+import android.app.PendingIntent;
+import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -23,9 +29,11 @@ import com.example.kataloghiburan.model.Genre;
 import com.example.kataloghiburan.model.MovieDetailResponse;
 import com.example.kataloghiburan.network.ApiClient;
 import com.example.kataloghiburan.network.ApiService;
+import com.example.kataloghiburan.utils.AlarmReceiver;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,6 +51,10 @@ public class DetailActivity extends AppCompatActivity {
     private TextView tvDetailRuntime;
     private TextView tvDetailGenres;
 
+    // UI Jadwal & Alarm
+    private MaterialButton btnSchedule;
+    private TextView tvSavedSchedule;
+
     // UI Rating & Review
     private RatingBar ratingBar;
     private EditText etReview;
@@ -59,7 +71,6 @@ public class DetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
-        // Inisialisasi Database dan Executor
         database = AppDatabase.getInstance(this);
         executorService = Executors.newSingleThreadExecutor();
 
@@ -73,6 +84,10 @@ public class DetailActivity extends AppCompatActivity {
         tvDetailRuntime = findViewById(R.id.tvDetailRuntime);
         tvDetailGenres = findViewById(R.id.tvDetailGenres);
 
+        // Inisialisasi UI Jadwal
+        btnSchedule = findViewById(R.id.btnSchedule);
+        tvSavedSchedule = findViewById(R.id.tvSavedSchedule);
+
         // Inisialisasi Komponen Ulasan
         ratingBar = findViewById(R.id.ratingBar);
         etReview = findViewById(R.id.etReview);
@@ -82,7 +97,6 @@ public class DetailActivity extends AppCompatActivity {
         tvSavedReviewText = findViewById(R.id.tvSavedReviewText);
         btnEditReview = findViewById(R.id.btnEditReview);
 
-        // Menangkap data Intent
         String title = getIntent().getStringExtra("EXTRA_TITLE");
         String overview = getIntent().getStringExtra("EXTRA_OVERVIEW");
         String posterPath = getIntent().getStringExtra("EXTRA_POSTER");
@@ -97,7 +111,7 @@ public class DetailActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
         fetchMovieDetails(movieId);
 
-        // Cek database untuk Status Favorit dan Data Ulasan
+        // Cek Status Favorit, Data Ulasan, dan Jadwal
         executorService.execute(() -> {
             FavoriteMovie existingMovie = database.favoriteMovieDao().getFavoriteById(movieId);
             if (existingMovie != null) {
@@ -108,8 +122,12 @@ public class DetailActivity extends AppCompatActivity {
 
                     String savedReview = existingMovie.getUserReview();
                     if (savedReview != null && !savedReview.trim().isEmpty()) {
-                        // Jika sudah ada ulasan tersimpan, tampilkan Mode Baca
                         showReadMode(savedReview);
+                    }
+
+                    // Tampilkan jadwal jika sudah pernah diatur
+                    if (existingMovie.getWatchDate() != null && existingMovie.getWatchTime() != null) {
+                        tvSavedSchedule.setText("Jadwal Nonton: " + existingMovie.getWatchDate() + " Pukul " + existingMovie.getWatchTime());
                     }
                 });
             }
@@ -140,7 +158,8 @@ public class DetailActivity extends AppCompatActivity {
                         btnFavorite.setText("Tambah ke Favorit");
                         ratingBar.setRating(0);
                         etReview.setText("");
-                        showEditMode(); // Kembalikan form jika dihapus
+                        tvSavedSchedule.setText("Jadwal Nonton: Belum diatur");
+                        showEditMode();
                         Toast.makeText(DetailActivity.this, "Dihapus dari Favorit!", Toast.LENGTH_SHORT).show();
                     });
                 }
@@ -155,6 +174,67 @@ public class DetailActivity extends AppCompatActivity {
             shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Rekomendasi Film: " + title);
             shareIntent.putExtra(Intent.EXTRA_TEXT, shareText);
             startActivity(Intent.createChooser(shareIntent, "Bagikan film via..."));
+        });
+
+        // Tombol Pengaturan Jadwal Nonton (Date & Time Picker)
+        btnSchedule.setOnClickListener(v -> {
+            if (!isFavorite) {
+                Toast.makeText(this, "Tambahkan ke favorit terlebih dahulu!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Calendar calendar = Calendar.getInstance();
+            // Buka dialog pemilihan Tanggal
+            new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
+                calendar.set(Calendar.YEAR, year);
+                calendar.set(Calendar.MONTH, month);
+                calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                String selectedDate = dayOfMonth + "/" + (month + 1) + "/" + year;
+
+                // Buka dialog pemilihan Jam setelah memilih Tanggal
+                new TimePickerDialog(this, (view1, hourOfDay, minute) -> {
+                    calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                    calendar.set(Calendar.MINUTE, minute);
+                    calendar.set(Calendar.SECOND, 0);
+                    String selectedTime = String.format("%02d:%02d", hourOfDay, minute);
+
+                    // Menyimpan data jadwal ke database
+                    executorService.execute(() -> {
+                        FavoriteMovie currentMovie = database.favoriteMovieDao().getFavoriteById(movieId);
+                        if (currentMovie != null) {
+                            currentMovie.setWatchDate(selectedDate);
+                            currentMovie.setWatchTime(selectedTime);
+                            database.favoriteMovieDao().insertFavorite(currentMovie);
+                        }
+                    });
+
+                    // Set AlarmManager untuk memicu AlarmReceiver
+                    AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+                    Intent alarmIntent = new Intent(this, AlarmReceiver.class);
+                    alarmIntent.putExtra("MOVIE_TITLE", title);
+                    alarmIntent.putExtra("MOVIE_ID", movieId);
+
+                    PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                            this,
+                            movieId,
+                            alarmIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                    );
+
+                    if (alarmManager != null) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+                        } else {
+                            alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+                        }
+                    }
+
+                    tvSavedSchedule.setText("Jadwal Nonton: " + selectedDate + " Pukul " + selectedTime);
+                    Toast.makeText(this, "Jadwal dan pengingat berhasil dipasang!", Toast.LENGTH_LONG).show();
+
+                }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show();
+
+            }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show();
         });
 
         // Tombol Simpan Ulasan
@@ -176,30 +256,25 @@ public class DetailActivity extends AppCompatActivity {
                 database.favoriteMovieDao().updateRatingAndReview(movieId, currentRating, currentReview);
                 runOnUiThread(() -> {
                     Toast.makeText(DetailActivity.this, "Ulasan tersimpan!", Toast.LENGTH_SHORT).show();
-                    showReadMode(currentReview); // Langsung ubah ke Mode Baca
+                    showReadMode(currentReview);
                 });
             });
         });
 
-        // Tombol Edit Ulasan
-        btnEditReview.setOnClickListener(v -> {
-            showEditMode(); // Buka kembali form untuk diedit
-        });
+        btnEditReview.setOnClickListener(v -> showEditMode());
     }
 
-    // --- Fungsi Bantuan untuk UX Dinamis ---
     private void showReadMode(String reviewText) {
         layoutEditReview.setVisibility(View.GONE);
         layoutSavedReview.setVisibility(View.VISIBLE);
         tvSavedReviewText.setText("\"" + reviewText + "\"");
-        etReview.setText(reviewText); // Siapkan teksnya di background kalau-kalau mau diedit
+        etReview.setText(reviewText);
     }
 
     private void showEditMode() {
         layoutSavedReview.setVisibility(View.GONE);
         layoutEditReview.setVisibility(View.VISIBLE);
     }
-    // ----------------------------------------
 
     private void fetchMovieDetails(int movieId) {
         ApiService apiService = ApiClient.getClient().create(ApiService.class);

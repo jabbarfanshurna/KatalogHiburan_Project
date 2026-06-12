@@ -1,9 +1,7 @@
 package com.example.kataloghiburan.ui;
 
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,15 +13,29 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.kataloghiburan.R;
+import com.example.kataloghiburan.local.AppDatabase;
+import com.example.kataloghiburan.local.FavoriteMovie;
+import com.example.kataloghiburan.utils.SessionManager;
 import com.google.android.material.button.MaterialButton;
+
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ProfileFragment extends Fragment {
 
-    private TextView tvProfileName, tvProfileEmail;
+    private TextView tvProfileName, tvProfileEmail, tvEmptySchedule;
     private MaterialButton btnEditProfile, btnLogout;
-    private SharedPreferences sharedPreferences;
+    private RecyclerView rvSchedules;
+
+    private SessionManager sessionManager;
+    private AppDatabase database;
+    private ExecutorService executorService;
+    private ScheduleAdapter scheduleAdapter;
 
     @Nullable
     @Override
@@ -39,54 +51,72 @@ public class ProfileFragment extends Fragment {
         tvProfileEmail = view.findViewById(R.id.tvProfileEmail);
         btnEditProfile = view.findViewById(R.id.btnEditProfile);
         btnLogout = view.findViewById(R.id.btnLogout);
+        rvSchedules = view.findViewById(R.id.rvSchedules);
+        tvEmptySchedule = view.findViewById(R.id.tvEmptySchedule);
 
-        // Inisialisasi SharedPreferences
-        sharedPreferences = requireActivity().getSharedPreferences("LoginSession", Context.MODE_PRIVATE);
+        sessionManager = new SessionManager(requireContext());
+        database = AppDatabase.getInstance(requireContext());
+        executorService = Executors.newSingleThreadExecutor();
 
-        // Memuat data saat fragment dibuka (Gunakan data default jika belum ada)
+        // Setup RecyclerView Jadwal
+        scheduleAdapter = new ScheduleAdapter();
+        rvSchedules.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvSchedules.setAdapter(scheduleAdapter);
+
         loadProfileData();
 
-        // Aksi Tombol Edit Profil
-        btnEditProfile.setOnClickListener(v -> {
-            showEditProfileDialog();
-        });
+        btnEditProfile.setOnClickListener(v -> showEditProfileDialog());
 
-        // Aksi Tombol Logout
         btnLogout.setOnClickListener(v -> {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.clear();
-            editor.apply();
-
+            sessionManager.logoutUser();
             Toast.makeText(requireContext(), "Berhasil Keluar", Toast.LENGTH_SHORT).show();
-
             Intent intent = new Intent(requireActivity(), LoginActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
         });
     }
 
-    // Fungsi untuk memuat data dari memori dan menampilkannya di layar
-    private void loadProfileData() {
-        String savedUsername = sharedPreferences.getString("USERNAME", "Pengguna Baru");
-        String savedEmail = sharedPreferences.getString("EMAIL", "email@kataloghiburan.com");
-
-        tvProfileName.setText(savedUsername);
-        tvProfileEmail.setText(savedEmail);
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Memuat jadwal setiap kali halaman profil dibuka
+        loadScheduleData();
     }
 
-    // Fungsi untuk menampilkan Custom Dialog Form Edit Profil
-    private void showEditProfileDialog() {
-        // Membuat pembuat dialog
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+    private void loadProfileData() {
+        String savedUsername = sessionManager.getUsername();
+        String savedEmail = sessionManager.getEmail();
 
-        // Memasukkan layout XML yang baru kita buat ke dalam dialog
+        tvProfileName.setText(savedUsername != null ? savedUsername : "Kennan");
+        tvProfileEmail.setText(savedEmail != null ? savedEmail : "kennan@kataloghiburan.com");
+    }
+
+    private void loadScheduleData() {
+        executorService.execute(() -> {
+            // Mengambil film yang sudah diset jadwalnya dari database
+            List<FavoriteMovie> scheduledMovies = database.favoriteMovieDao().getScheduledMovies();
+
+            requireActivity().runOnUiThread(() -> {
+                if (scheduledMovies != null && !scheduledMovies.isEmpty()) {
+                    scheduleAdapter.setData(scheduledMovies);
+                    rvSchedules.setVisibility(View.VISIBLE);
+                    tvEmptySchedule.setVisibility(View.GONE);
+                } else {
+                    rvSchedules.setVisibility(View.GONE);
+                    tvEmptySchedule.setVisibility(View.VISIBLE);
+                }
+            });
+        });
+    }
+
+    private void showEditProfileDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_edit_profile, null);
         builder.setView(dialogView);
 
         EditText etEditName = dialogView.findViewById(R.id.etEditName);
         EditText etEditEmail = dialogView.findViewById(R.id.etEditEmail);
 
-        // Menampilkan nama dan email saat ini di dalam form sebelum diedit
         etEditName.setText(tvProfileName.getText().toString());
         etEditEmail.setText(tvProfileEmail.getText().toString());
 
@@ -95,26 +125,25 @@ public class ProfileFragment extends Fragment {
             String newEmail = etEditEmail.getText().toString().trim();
 
             if (!newName.isEmpty() && !newEmail.isEmpty()) {
-                // Menyimpan data baru ke dalam SharedPreferences
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString("USERNAME", newName);
-                editor.putString("EMAIL", newEmail);
-                editor.apply();
-
-                // Memperbarui teks di halaman profil secara langsung
+                sessionManager.createLoginSession(newName, newEmail);
                 loadProfileData();
-
                 Toast.makeText(requireContext(), "Profil berhasil diperbarui!", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(requireContext(), "Nama dan Email tidak boleh kosong!", Toast.LENGTH_SHORT).show();
             }
         });
 
-        builder.setNegativeButton("Batal", (dialog, which) -> {
-            dialog.dismiss(); // Menutup dialog jika batal
-        });
+        builder.setNegativeButton("Batal", (dialog, which) -> dialog.dismiss());
 
         AlertDialog dialog = builder.create();
         dialog.show();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (executorService != null) {
+            executorService.shutdown();
+        }
     }
 }

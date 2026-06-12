@@ -22,6 +22,13 @@ public class FavoriteMovie {
     @ColumnInfo(name = "user_review")
     private String userReview;
 
+    // Tambahan Fase 4: Kolom untuk Jadwal Nonton
+    @ColumnInfo(name = "watch_date")
+    private String watchDate;
+
+    @ColumnInfo(name = "watch_time")
+    private String watchTime;
+
     // --- Getter dan Setter ---
 
     public int getId() { return id; }
@@ -36,11 +43,15 @@ public class FavoriteMovie {
     public String getPosterPath() { return posterPath; }
     public void setPosterPath(String posterPath) { this.posterPath = posterPath; }
 
-    // Getter & Setter untuk Rating
     public float getUserRating() { return userRating; }
     public void setUserRating(float userRating) { this.userRating = userRating; }
 
-    // Getter & Setter untuk Review
     public String getUserReview() { return userReview; }
     public void setUserReview(String userReview) { this.userReview = userReview; }
+
+    public String getWatchDate() { return watchDate; }
+    public void setWatchDate(String watchDate) { this.watchDate = watchDate; }
+
+    public String getWatchTime() { return watchTime; }
+    public void setWatchTime(String watchTime) { this.watchTime = watchTime; }
 }
