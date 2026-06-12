@@ -98,6 +98,98 @@
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 app:icon="@android:drawable/ic_menu_share" />
 
+            <!-- PEMBATAS AREA REVIEW -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?attr/colorOnSurface"
+                android:alpha="0.2"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Penilaian Pribadi"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginBottom="8dp"/>
+
+            <!-- Bintang Rating -->
+            <RatingBar
+                android:id="@+id/ratingBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:numStars="5"
+                android:stepSize="0.5"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- MODE BACA ULASAN (Tersembunyi di awal) -->
+            <LinearLayout
+                android:id="@+id/layoutSavedReview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginBottom="24dp">
+
+                <TextView
+                    android:id="@+id/tvSavedReviewText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:background="#1A888888"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textStyle="italic"
+                    android:lineSpacingExtra="4dp"
+                    android:layout_marginBottom="8dp"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEditReview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Edit Ulasan"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+            </LinearLayout>
+
+            <!-- MODE INPUT ULASAN (Muncu di awal) -->
+            <LinearLayout
+                android:id="@+id/layoutEditReview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="24dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Tambahkan ke favorit terlebih dahulu untuk memberi ulasan."
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:alpha="0.6"
+                    android:layout_marginBottom="8dp"/>
+
+                <EditText
+                    android:id="@+id/etReview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Tulis ulasan personalmu di sini..."
+                    android:inputType="textMultiLine"
+                    android:lines="3"
+                    android:gravity="top|start"
+                    android:background="@android:drawable/editbox_background"
+                    android:padding="12dp"
+                    android:layout_marginBottom="12dp"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSaveReview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Simpan Ulasan"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+            </LinearLayout>
+
         </LinearLayout>
     </RelativeLayout>
 </ScrollView>

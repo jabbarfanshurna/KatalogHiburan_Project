@@ -2,13 +2,26 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:background="?attr/colorSurface"
+    android:padding="8dp">
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvFavoriteMovies"
+        android:id="@+id/rvFavorites"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
-        android:padding="4dp"/>
+        android:paddingBottom="80dp"/>
+
+    <TextView
+        android:id="@+id/tvEmptyFavorite"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Belum ada film favorit.\nAyo cari dan tambahkan!"
+        android:textAlignment="center"
+        android:textSize="16sp"
+        android:textColor="?attr/colorOnSurface"
+        android:alpha="0.6"
+        android:layout_centerInParent="true"
+        android:visibility="gone"/>
 
 </RelativeLayout>
