@@ -98,7 +98,6 @@
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 app:icon="@android:drawable/ic_menu_share" />
 
-            <!-- TAMBAHAN FASE 4: TOMBOL JADWAL NONTON -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSchedule"
                 android:layout_width="match_parent"
@@ -120,7 +119,6 @@
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="8dp"/>
 
-            <!-- PEMBATAS AREA REVIEW -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
@@ -138,16 +136,17 @@
                 android:textColor="?attr/colorOnSurface"
                 android:layout_marginBottom="8dp"/>
 
-            <!-- Bintang Rating -->
             <RatingBar
                 android:id="@+id/ratingBar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:numStars="5"
-                android:stepSize="0.5"
+                android:stepSize="1.0"
+                android:progressTint="#FFC107"
+                android:progressBackgroundTint="#757575"
+                android:secondaryProgressTint="#FFC107"
                 android:layout_marginBottom="12dp"/>
 
-            <!-- MODE BACA ULASAN (Tersembunyi di awal) -->
             <LinearLayout
                 android:id="@+id/layoutSavedReview"
                 android:layout_width="match_parent"
@@ -175,7 +174,6 @@
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
             </LinearLayout>
 
-            <!-- MODE INPUT ULASAN (Muncu di awal) -->
             <LinearLayout
                 android:id="@+id/layoutEditReview"
                 android:layout_width="match_parent"
@@ -192,17 +190,25 @@
                     android:alpha="0.6"
                     android:layout_marginBottom="8dp"/>
 
-                <EditText
-                    android:id="@+id/etReview"
+                <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Tulis ulasan personalmu di sini..."
-                    android:inputType="textMultiLine"
-                    android:lines="3"
-                    android:gravity="top|start"
-                    android:background="@android:drawable/editbox_background"
-                    android:padding="12dp"
-                    android:layout_marginBottom="12dp"/>
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    app:boxStrokeColor="?attr/colorPrimary"
+                    app:hintTextColor="?attr/colorPrimary"
+                    android:layout_marginBottom="16dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etReview"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Tulis ulasan personalmu di sini..."
+                        android:minLines="3"
+                        android:gravity="top|start"
+                        android:inputType="textMultiLine"
+                        android:textColor="?attr/colorOnSurface" />
+
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSaveReview"

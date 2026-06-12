@@ -71,7 +71,7 @@ public class FavoriteAdapter extends RecyclerView.Adapter<FavoriteAdapter.Favori
             super(itemView);
             imgPoster = itemView.findViewById(R.id.imgFavPoster);
             tvTitle = itemView.findViewById(R.id.tvFavTitle);
-            rbRating = itemView.findViewById(R.id.rbFavRating);
+            rbRating = itemView.findViewById(R.id.ratingBar);
         }
     }
 }

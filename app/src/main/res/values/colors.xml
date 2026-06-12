@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="red_primary">#E50914</color>
+    <color name="red_variant">#B20710</color>
+    <color name="white_murni">#FFFFFF</color>
+
+    <color name="bg_terang">#F8F9FA</color>
+    <color name="surface_terang">#FFFFFF</color>
+    <color name="text_utama_terang">#121212</color>
+    <color name="text_sekunder_terang">#666666</color>
+
+    <color name="bg_gelap">#121212</color>
+    <color name="surface_gelap">#1E1E1E</color>
+    <color name="text_utama_gelap">#FFFFFF</color>
+    <color name="text_sekunder_gelap">#E0E0E0</color>
 </resources>

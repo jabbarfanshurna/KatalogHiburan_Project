@@ -10,24 +10,28 @@
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        app:elevation="4dp">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/topAppBar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="Katalog Hiburan"
+            app:title="Movie Catalog"
             app:titleTextColor="?attr/colorOnSurface"
             android:background="?attr/colorSurface">
 
+            <!-- PERBAIKAN: Area sentuh diperbesar jadi 48dp dan dikunci di tengah vertikal -->
             <ImageButton
                 android:id="@+id/btnToggleTheme"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:layout_marginEnd="16dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="8dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_menu_today"
+                android:src="@drawable/ic_theme_toggle"
+                android:scaleType="centerInside"
+                android:contentDescription="Ganti Tema"
                 app:tint="?attr/colorOnSurface" />
 
         </com.google.android.material.appbar.MaterialToolbar>

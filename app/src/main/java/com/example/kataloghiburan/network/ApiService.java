@@ -29,4 +29,13 @@ public interface ApiService {
             @Path("movie_id") int movieId,
             @Query("api_key") String apiKey
     );
+
+    // ... (endpoint yang sudah ada sebelumnya biarkan saja) ...
+
+    // TAMBAHAN: Endpoint untuk filter film berdasarkan Genre
+    @GET("discover/movie")
+    Call<MovieResponse> getMoviesByGenre(
+            @Query("api_key") String apiKey,
+            @Query("with_genres") int genreId
+    );
 }

@@ -1,19 +1,21 @@
 package com.example.kataloghiburan.ui;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.kataloghiburan.R;
@@ -21,8 +23,8 @@ import com.example.kataloghiburan.model.Movie;
 import com.example.kataloghiburan.model.MovieResponse;
 import com.example.kataloghiburan.network.ApiClient;
 import com.example.kataloghiburan.network.ApiService;
+import com.google.android.material.chip.ChipGroup;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
@@ -32,121 +34,196 @@ import retrofit2.Response;
 public class HomeFragment extends Fragment {
 
     private RecyclerView rvMovies;
+    private MovieAdapter movieAdapter;
     private ProgressBar progressBar;
     private LinearLayout layoutError;
     private Button btnRefresh;
     private SearchView searchView;
+    private ChipGroup chipGroupGenres;
 
-    private MovieAdapter adapter;
-    private List<Movie> movieList = new ArrayList<>();
-
-    // Menggunakan API Key dari TMDB kamu
+    private ApiService apiService;
     private static final String API_KEY = "ee577d1401cb1a62355ac90f7458be06";
-    private String currentQuery = ""; // Menyimpan status pencarian terakhir
+
+    private Handler searchHandler = new Handler(Looper.getMainLooper());
+    private Runnable searchRunnable;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_home, container, false);
+        return inflater.inflate(R.layout.fragment_home, container, false);
+    }
 
-        // 1. Inisialisasi View dari XML
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
         rvMovies = view.findViewById(R.id.rvMovies);
         progressBar = view.findViewById(R.id.progressBar);
         layoutError = view.findViewById(R.id.layoutError);
         btnRefresh = view.findViewById(R.id.btnRefresh);
         searchView = view.findViewById(R.id.searchView);
+        chipGroupGenres = view.findViewById(R.id.chipGroupGenres);
 
-        // 2. Konfigurasi RecyclerView
-        rvMovies.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new MovieAdapter(getContext(), movieList);
-        rvMovies.setAdapter(adapter);
+        apiService = ApiClient.getClient().create(ApiService.class);
 
-        // 3. Panggil fungsi untuk mengambil data (Awal buka: film populer)
-        fetchMovies();
+        // Inisialisasi RecyclerView dan Adapter baru yang sudah bersih
+        rvMovies.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        movieAdapter = new MovieAdapter();
+        rvMovies.setAdapter(movieAdapter);
 
-        // 4. Setup Tombol Refresh jika terjadi error/tidak ada jaringan
-        btnRefresh.setOnClickListener(v -> {
-            if (currentQuery.isEmpty()) {
-                fetchMovies();
-            } else {
-                searchMoviesFromApi(currentQuery);
-            }
-        });
+        btnRefresh.setOnClickListener(v -> fetchPopularMovies());
 
-        // 5. Setup Aksi Pencarian (Search View)
+        setupLiveSearch();
+        setupGenreFilter();
+
+        // Muat film populer pertama kali
+        fetchPopularMovies();
+    }
+
+    private void setupLiveSearch() {
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
+                searchHandler.removeCallbacks(searchRunnable);
                 if (!query.trim().isEmpty()) {
-                    currentQuery = query;
-                    searchMoviesFromApi(query);
-                    searchView.clearFocus(); // Menyembunyikan keyboard setelah mencari
+                    searchMovies(query);
                 }
                 return true;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                // Jika kolom pencarian dihapus sampai kosong, kembalikan ke list populer
-                if (newText.isEmpty()) {
-                    currentQuery = "";
-                    fetchMovies();
-                }
-                return false;
+                searchHandler.removeCallbacks(searchRunnable);
+                searchRunnable = () -> {
+                    if (newText.trim().isEmpty()) {
+                        checkCurrentGenreAndLoad();
+                    } else {
+                        chipGroupGenres.check(R.id.chipAll);
+                        searchMovies(newText);
+                    }
+                };
+                // Jeda 500ms agar API tidak spam
+                searchHandler.postDelayed(searchRunnable, 500);
+                return true;
             }
         });
-
-        return view;
     }
 
-    // Fungsi untuk menarik film populer
-    private void fetchMovies() {
-        ApiService apiService = ApiClient.getClient().create(ApiService.class);
-        Call<MovieResponse> call = apiService.getPopularMovies(API_KEY);
-        executeApiCall(call);
+    private void setupGenreFilter() {
+        chipGroupGenres.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            if (checkedIds.isEmpty()) {
+                group.check(R.id.chipAll);
+                return;
+            }
+
+            int checkedId = checkedIds.get(0);
+
+            searchView.setQuery("", false);
+            searchView.clearFocus();
+
+            if (checkedId == R.id.chipAll) {
+                fetchPopularMovies();
+            } else if (checkedId == R.id.chipAction) {
+                fetchMoviesByGenre(28);
+            } else if (checkedId == R.id.chipHorror) {
+                fetchMoviesByGenre(27);
+            } else if (checkedId == R.id.chipComedy) {
+                fetchMoviesByGenre(35);
+            } else if (checkedId == R.id.chipAnimation) {
+                fetchMoviesByGenre(16);
+            }
+        });
     }
 
-    // Fungsi untuk mencari film berdasarkan input user
-    private void searchMoviesFromApi(String query) {
-        ApiService apiService = ApiClient.getClient().create(ApiService.class);
-        Call<MovieResponse> call = apiService.searchMovies(API_KEY, query);
-        executeApiCall(call);
+    private void checkCurrentGenreAndLoad() {
+        int checkedId = chipGroupGenres.getCheckedChipId();
+        if (checkedId == R.id.chipAction) fetchMoviesByGenre(28);
+        else if (checkedId == R.id.chipHorror) fetchMoviesByGenre(27);
+        else if (checkedId == R.id.chipComedy) fetchMoviesByGenre(35);
+        else if (checkedId == R.id.chipAnimation) fetchMoviesByGenre(16);
+        else fetchPopularMovies();
     }
 
-    // Fungsi pembantu untuk memproses respon API agar tidak menulis kode berulang
-    private void executeApiCall(Call<MovieResponse> call) {
-        progressBar.setVisibility(View.VISIBLE);
-        layoutError.setVisibility(View.GONE);
-        rvMovies.setVisibility(View.GONE);
-
-        call.enqueue(new Callback<MovieResponse>() {
+    private void fetchPopularMovies() {
+        showLoading(true);
+        apiService.getPopularMovies(API_KEY).enqueue(new Callback<MovieResponse>() {
             @Override
-            public void onResponse(@NonNull Call<MovieResponse> call, @NonNull Response<MovieResponse> response) {
-                progressBar.setVisibility(View.GONE);
-
+            public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
+                showLoading(false);
                 if (response.isSuccessful() && response.body() != null) {
-                    movieList.clear();
-                    movieList.addAll(response.body().getResults());
-                    adapter.notifyDataSetChanged();
+                    movieAdapter.setData(response.body().getResults());
                     rvMovies.setVisibility(View.VISIBLE);
-
-                    // Notifikasi jika film yang dicari tidak ada
-                    if (movieList.isEmpty() && getContext() != null) {
-                        Toast.makeText(getContext(), "Film tidak ditemukan", Toast.LENGTH_SHORT).show();
-                    }
+                    layoutError.setVisibility(View.GONE);
                 } else {
-                    layoutError.setVisibility(View.VISIBLE);
-                    if (getContext() != null) {
-                        Toast.makeText(getContext(), "Gagal memuat data dari server", Toast.LENGTH_SHORT).show();
-                    }
+                    showError();
                 }
             }
 
             @Override
-            public void onFailure(@NonNull Call<MovieResponse> call, @NonNull Throwable t) {
-                progressBar.setVisibility(View.GONE);
-                layoutError.setVisibility(View.VISIBLE);
+            public void onFailure(Call<MovieResponse> call, Throwable t) {
+                showLoading(false);
+                showError();
+                Log.e("HomeFragment", "Error: " + t.getMessage());
             }
         });
+    }
+
+    private void fetchMoviesByGenre(int genreId) {
+        showLoading(true);
+        apiService.getMoviesByGenre(API_KEY, genreId).enqueue(new Callback<MovieResponse>() {
+            @Override
+            public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
+                showLoading(false);
+                if (response.isSuccessful() && response.body() != null) {
+                    movieAdapter.setData(response.body().getResults());
+                    rvMovies.setVisibility(View.VISIBLE);
+                    layoutError.setVisibility(View.GONE);
+                } else {
+                    showError();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<MovieResponse> call, Throwable t) {
+                showLoading(false);
+                showError();
+                Log.e("HomeFragment", "Error: " + t.getMessage());
+            }
+        });
+    }
+
+    private void searchMovies(String query) {
+        showLoading(true);
+        apiService.searchMovies(API_KEY, query).enqueue(new Callback<MovieResponse>() {
+            @Override
+            public void onResponse(Call<MovieResponse> call, Response<MovieResponse> response) {
+                showLoading(false);
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Movie> results = response.body().getResults();
+                    movieAdapter.setData(results);
+                    rvMovies.setVisibility(View.VISIBLE);
+                    layoutError.setVisibility(View.GONE);
+                } else {
+                    showError();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<MovieResponse> call, Throwable t) {
+                showLoading(false);
+                showError();
+                Log.e("HomeFragment", "Error: " + t.getMessage());
+            }
+        });
+    }
+
+    private void showLoading(boolean isLoading) {
+        progressBar.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+        if (isLoading) rvMovies.setVisibility(View.GONE);
+    }
+
+    private void showError() {
+        rvMovies.setVisibility(View.GONE);
+        layoutError.setVisibility(View.VISIBLE);
     }
 }
