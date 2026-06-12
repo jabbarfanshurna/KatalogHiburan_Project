@@ -33,7 +33,7 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="24dp"
-        android:text="Developed by Kennan"
+        android:text="Developed by Jabbar"
         android:textColor="?attr/colorOnSurface"
         android:alpha="0.7" />
 

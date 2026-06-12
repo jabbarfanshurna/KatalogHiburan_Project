@@ -3,6 +3,7 @@ package com.example.kataloghiburan.ui;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -12,39 +13,35 @@ import com.example.kataloghiburan.R;
 import com.example.kataloghiburan.local.AppDatabase;
 import com.example.kataloghiburan.model.User;
 import com.example.kataloghiburan.utils.SessionManager;
-import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private TextInputEditText etEmail, etPassword;
+    private EditText etEmail, etPassword;
+    private Button btnLogin;
+    private TextView tvGoToRegister;
+
     private AppDatabase database;
     private ExecutorService executorService;
-    private SessionManager sessionManager;
+    private SessionManager sessionManager; // Gunakan SessionManager
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        sessionManager = new SessionManager(this);
-
-        // Jika sudah pernah login sebelumnya, langsung lempar ke MainActivity
-        if (sessionManager.isLoggedIn()) {
-            startActivity(new Intent(this, MainActivity.class));
-            finish();
-            return;
-        }
-
         etEmail = findViewById(R.id.etEmailLogin);
         etPassword = findViewById(R.id.etPasswordLogin);
-        Button btnLogin = findViewById(R.id.btnLogin);
-        TextView tvGoToRegister = findViewById(R.id.tvGoToRegister);
+        btnLogin = findViewById(R.id.btnLogin);
+        tvGoToRegister = findViewById(R.id.tvGoToRegister);
 
         database = AppDatabase.getInstance(this);
         executorService = Executors.newSingleThreadExecutor();
+
+        // Inisialisasi SessionManager
+        sessionManager = new SessionManager(this);
 
         tvGoToRegister.setOnClickListener(v -> {
             startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
@@ -55,25 +52,27 @@ public class LoginActivity extends AppCompatActivity {
             String password = etPassword.getText().toString().trim();
 
             if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(this, "Email dan Password tidak boleh kosong!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, "Email dan Password tidak boleh kosong!", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             executorService.execute(() -> {
-                // Cari data user di database
-                User user = database.userDao().login(email, password);
+                User user = database.userDao().getUserByEmailAndPassword(email, password);
 
                 runOnUiThread(() -> {
                     if (user != null) {
-                        // Jika cocok, simpan sesi login
-                        sessionManager.createLoginSession(user.name, user.email);
-                        Toast.makeText(this, "Login Berhasil", Toast.LENGTH_SHORT).show();
+                        // REFACTOR: Simpan sesi menggunakan SessionManager
+                        // Ubah nama method ini jika di file SessionManager-mu berbeda
+                        sessionManager.createLoginSession(user.getName(), user.getEmail());
 
-                        // Pindah ke halaman utama
-                        startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                        Toast.makeText(LoginActivity.this, "Selamat datang, " + user.getName() + "!", Toast.LENGTH_SHORT).show();
+
+                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
                         finish();
                     } else {
-                        Toast.makeText(this, "Email atau Password salah!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(LoginActivity.this, "Email atau Password salah!", Toast.LENGTH_SHORT).show();
                     }
                 });
             });

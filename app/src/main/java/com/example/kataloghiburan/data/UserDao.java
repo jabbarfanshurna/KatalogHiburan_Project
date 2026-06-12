@@ -1,4 +1,4 @@
-package com.example.kataloghiburan.data;
+package com.example.kataloghiburan.data; // Sesuaikan dengan package-mu
 
 import androidx.room.Dao;
 import androidx.room.Insert;
@@ -9,19 +9,15 @@ import com.example.kataloghiburan.model.User;
 @Dao
 public interface UserDao {
 
-    // Mendaftarkan user baru
+    // Mendaftarkan pengguna baru
     @Insert
-    void registerUser(User user);
+    void insertUser(User user);
 
-    // Mengecek login (mencocokkan email dan password)
-    @Query("SELECT * FROM users WHERE email = :email AND password = :password")
-    User login(String email, String password);
+    // Untuk Login: Mencocokkan email dan password
+    @Query("SELECT * FROM users WHERE email = :email AND password = :password LIMIT 1")
+    User getUserByEmailAndPassword(String email, String password);
 
-    // Mengecek apakah email sudah terdaftar sebelumnya
-    @Query("SELECT * FROM users WHERE email = :email")
-    User checkEmailExists(String email);
-
-    // Mengupdate nama user berdasarkan emailnya
-    @Query("UPDATE users SET name = :newName WHERE email = :email")
-    void updateUserName(String newName, String email);
+    // Untuk Register: Mengecek apakah email sudah pernah didaftarkan
+    @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
+    User getUserByEmail(String email);
 }
