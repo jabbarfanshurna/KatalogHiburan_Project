@@ -41,6 +41,32 @@
                 android:layout_marginBottom="8dp"/>
 
             <TextView
+                android:id="@+id/tvDetailRuntime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Durasi: Memuat..."
+                android:textSize="14sp"
+                android:textColor="?attr/colorOnSurface"
+                android:alpha="0.8"
+                android:layout_marginBottom="4dp"
+                app:drawableStartCompat="@android:drawable/ic_menu_recent_history"
+                android:drawablePadding="8dp"
+                android:gravity="center_vertical"/>
+
+            <TextView
+                android:id="@+id/tvDetailGenres"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Genre: Memuat..."
+                android:textSize="14sp"
+                android:textColor="?attr/colorOnSurface"
+                android:alpha="0.8"
+                android:layout_marginBottom="16dp"
+                app:drawableStartCompat="@android:drawable/ic_menu_sort_by_size"
+                android:drawablePadding="8dp"
+                android:gravity="center_vertical"/>
+
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Overview"
@@ -62,6 +88,15 @@
                 android:layout_height="wrap_content"
                 android:text="Tambah ke Favorit"
                 app:icon="@android:drawable/ic_input_add" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnShare"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Bagikan Film Ini"
+                android:layout_marginTop="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                app:icon="@android:drawable/ic_menu_share" />
 
         </LinearLayout>
     </RelativeLayout>

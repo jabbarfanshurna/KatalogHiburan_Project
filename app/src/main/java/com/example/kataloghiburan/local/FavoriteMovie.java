@@ -1,5 +1,6 @@
 package com.example.kataloghiburan.local;
 
+import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
@@ -14,6 +15,13 @@ public class FavoriteMovie {
     private String overview;
     private String posterPath;
 
+    // Tambahan Fase 3: Kolom untuk Rating dan Ulasan Personal
+    @ColumnInfo(name = "user_rating")
+    private float userRating;
+
+    @ColumnInfo(name = "user_review")
+    private String userReview;
+
     // --- Getter dan Setter ---
 
     public int getId() { return id; }
@@ -27,4 +35,12 @@ public class FavoriteMovie {
 
     public String getPosterPath() { return posterPath; }
     public void setPosterPath(String posterPath) { this.posterPath = posterPath; }
+
+    // Getter & Setter untuk Rating
+    public float getUserRating() { return userRating; }
+    public void setUserRating(float userRating) { this.userRating = userRating; }
+
+    // Getter & Setter untuk Review
+    public String getUserReview() { return userReview; }
+    public void setUserReview(String userReview) { this.userReview = userReview; }
 }

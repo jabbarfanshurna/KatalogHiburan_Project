@@ -16,4 +16,10 @@
         android:name="com.example.kataloghiburan.ui.FavoriteFragment"
         android:label="Favorite"
         tools:layout="@layout/fragment_favorite" />
+
+    <fragment
+        android:id="@+id/nav_profile"
+        android:name="com.example.kataloghiburan.ui.ProfileFragment"
+        android:label="Profile"
+        tools:layout="@layout/fragment_profile" />
 </navigation>

@@ -1,4 +1,5 @@
 package com.example.kataloghiburan.ui;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -35,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 2. Setup Navigasi Bawah
+        // 2. Setup Navigasi Bawah menggunakan Navigation Component
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment);
@@ -47,17 +48,19 @@ public class MainActivity extends AppCompatActivity {
 
         // 3. Setup Tombol Ganti Tema
         ImageButton btnToggleTheme = findViewById(R.id.btnToggleTheme);
-        btnToggleTheme.setOnClickListener(v -> {
-            if (isDarkMode) {
-                // Ubah ke Light Mode
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-                editor.putBoolean("isDarkMode", false);
-            } else {
-                // Ubah ke Dark Mode
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-                editor.putBoolean("isDarkMode", true);
-            }
-            editor.apply(); // Simpan perubahan ke SharedPreferences
-        });
+        if (btnToggleTheme != null) {
+            btnToggleTheme.setOnClickListener(v -> {
+                if (isDarkMode) {
+                    // Ubah ke Light Mode
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+                    editor.putBoolean("isDarkMode", false);
+                } else {
+                    // Ubah ke Dark Mode
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+                    editor.putBoolean("isDarkMode", true);
+                }
+                editor.apply(); // Simpan perubahan ke SharedPreferences
+            });
+        }
     }
 }

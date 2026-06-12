@@ -26,4 +26,8 @@ public interface FavoriteMovieDao {
     // Mengecek apakah sebuah film sudah difavoritkan
     @Query("SELECT * FROM favorite_movies WHERE id = :id LIMIT 1")
     FavoriteMovie getFavoriteById(int id);
+
+    // Tambahan Fase 3: Perintah untuk mengupdate rating dan ulasan ke film tertentu
+    @Query("UPDATE favorite_movies SET user_rating = :rating, user_review = :review WHERE id = :id")
+    void updateRatingAndReview(int id, float rating, String review);
 }
